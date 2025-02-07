@@ -1,0 +1,71 @@
+import os, shutil
+Import("env")
+
+bin_file      = "sans"
+test_file     = "sans-tests"
+
+project = env["project"]
+wraps = ("sans_connect", "sans_disconnect", "sans_accept", "sans_send_data", "sans_send_pkt", "sans_recv_data", "sans_recv_pkt", "http_client", "http_server", "smtp_agent", "tcp_proxy", "getaddrinfo", "socket", "connect", "bind", "listen", "accept", "send", "sendto", "recv", "recvfrom")
+
+wraps_flags   = " ".join([f"-Wl,--wrap={n}" for n in wraps])
+sans_files  = [Glob(os.path.join("src", "*.c"))]
+archive = os.path.join("src", "testing", "templates.a")
+test_files    = [
+    Glob(os.path.join("src", "testing", "*.c"))
+]
+
+env.Append(LINKFLAGS=wraps_flags)
+test_env = env.Clone()
+test_env.Append(CFLAGS=f"-DPROJECT={project}")
+test_env.Append(LINKFLAGS=" -Wl,--wrap=main")
+
+def do_checkout(target, source, env):
+    with open(".msfile", 'w') as f:
+        f.write(str(project))
+
+    for fname in os.listdir(".setup"):
+        parts = fname.split('-')
+        if parts[1] == project:
+            out_file = os.path.join("src", *parts[2:])
+            print(f"-- Checking out file: {out_file}")
+            if os.path.isfile(out_file):
+                while (resp := input(f"  '{out_file}' exists, would you like to replace this file? [y/N] ")) not in ['', 'y', 'Y', 'n', 'N']: pass
+                if resp in ['n', 'N', '']: continue
+            shutil.copy2(os.path.join(".setup", fname), out_file)
+            os.system(f"git add {out_file}")
+
+    with open(os.path.join("src", "testing", "complete.h"), 'w') as f:
+        f.write("#ifndef PROJECT\n")
+        f.write(f"#define PROJECT {int(project)}\n")
+        f.write("#endif\n")
+        for n in range(1, int(project) + 1):
+            f.write(f"#define PROJECT_{n}\n")
+
+bld_checkout = env.Builder(action=do_checkout)
+env["BUILDERS"]["Checkout"] = bld_checkout
+
+
+# ----------------------  Build Program  ----------------------------
+objs   = env.Object(sans_files + test_files)
+binary = env.Program(bin_file, objs + [archive])
+#binary = env.Program(bin_file, objs)
+binary = env.Command("copied_bin", binary, Copy(".", "$SOURCE"))
+
+tester = test_env.Program(test_file, objs + [archive])
+#tester = test_env.Program(test_file, objs)
+tester = test_env.Command("copied_test", tester, Copy(test_file, "$SOURCE"))
+env.Alias("build", binary + tester)
+env.Default(["build"])
+
+# ----------------------  Virtualization  ----------------------------
+protocol = "smtp" if project == 3 else "http"
+test = env.Command("test_cmd_server", source=tester, action=f"./{test_file}")
+env.Depends(test, tester)
+env.Alias("test", test)
+
+# --------------------  Environment Management  ----------------------
+checkout = env.Checkout("checkout_runner", None)
+env.Alias("checkout", checkout)
+
+env.Clean(binary, f"#{bin_file}")
+env.Clean(tester, f"#{test_file}")

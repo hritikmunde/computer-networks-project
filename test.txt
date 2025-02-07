@@ -1,0 +1,53 @@
+// #include <stdlib.h>
+// #include <stdio.h>
+// #include <string.h>
+// #include <errno.h>
+// #include "include/rudp.h"
+
+// #define SWND_SIZE 10
+
+// typedef struct {
+//   int socket;
+//   int packetlen;
+//   rudp_packet_t* packet;
+// } swnd_entry_t;
+
+// swnd_entry_t send_window[SWND_SIZE];  /*  Ring buffer containing the packets awaiting acknowledgement */
+
+// static int sent = 0;
+// static int count = 0;
+// static int head = 0;
+
+// /*
+//  * Helper: We recommend writing a helper function for pushing a packet onto the ring buffer
+//  *         that can be called from the main thread.
+//  *    (Remember to copy the packet to avoid thread conflicts!)
+//  */
+// void enqueue_packet(int sock, rudp_packet_t* pkt, int len) {
+  
+// }
+
+// /*
+//  * Helper: We recommend writing a helper function for removing a completed packet from the ring
+//  *         buffer that can be called from the backend thread.
+//  */
+// static void dequeue_packet(void) {
+  
+// }
+
+// /*  Asynchronous runner for the sans protocol driver.  This function  *
+//  *  is responsible for checking for packets in the `send_window` and  *
+//  *  handling the transmission of these packets in a reliable manner.  *
+//  *  (i.e. Stop-and-Wait or Go-Back-N)                                 */
+// void* sans_backend(void* unused) {
+  
+//   while (1) {
+//     /* ---- Background worker code ---- */
+    
+    
+    
+//     /*----------------------------------*/
+//   }
+
+//   return NULL;
+// }
